@@ -172,13 +172,6 @@
                             <option value="dont_allow">אל תאפשר דמויות</option>
                         </select>
                     </div>
-                     <div class="form-group">
-                        <label for="numberOfVideos">מספר סרטונים</label>
-                        <select id="numberOfVideos">
-                            <option value="1" selected>1</option>
-                            <option value="2">2</option>
-                        </select>
-                    </div>
                     <div class="form-group slider-group">
                         <label for="durationSeconds">משך (שניות)</label>
                         <input type="range" id="durationSeconds" min="5" max="8" value="5" step="1">
@@ -186,7 +179,7 @@
                     </div>
                 </div>
             </fieldset>
-            
+
             <button type="submit" id="submitBtn" class="full-width">צור וידאו 🚀</button>
         </form>
 
@@ -315,7 +308,6 @@
                     negativePrompt: document.getElementById('negativePrompt').value.trim() || undefined,
                     aspectRatio: document.getElementById('aspectRatio').value,
                     personGeneration: document.getElementById('personGeneration').value,
-                    numberOfVideos: parseInt(document.getElementById('numberOfVideos').value, 10),
                     durationSeconds: parseInt(document.getElementById('durationSeconds').value, 10)
                 }
             };
