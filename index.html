@@ -184,10 +184,6 @@
                         <input type="range" id="durationSeconds" min="5" max="8" value="5" step="1">
                         <output for="durationSeconds" id="durationValue">5</output>
                     </div>
-                    <div class="form-group">
-                         <label for="enhance_prompt">שכתוב הנחיה אוטומטי</label>
-                         <input type="checkbox" id="enhance_prompt" checked style="width: auto;">
-                    </div>
                 </div>
             </fieldset>
             
@@ -199,7 +195,7 @@
     </div>
 
     <script>
-       const videoForm = document.getElementById('videoForm');
+        const videoForm = document.getElementById('videoForm');
         const submitBtn = document.getElementById('submitBtn');
         const statusDiv = document.getElementById('status');
         const resultDiv = document.getElementById('result');
@@ -211,7 +207,6 @@
         let imageBase64 = null;
 
         const API_HOST = 'https://generativelanguage.googleapis.com';
-        // הוחזר שם המודל ונקודת הקצה הנכונים
         const MODEL_ENDPOINT = 'veo-2.0-generate-001:predictLongRunning';
 
         // --- Event Listeners ---
@@ -269,7 +264,6 @@
                 }
                 
                 const responseData = finalResult.response;
-                // בדיקה משופרת לשגיאות סינון תוכן
                 if (responseData && responseData['@type'] && responseData['@type'].includes('PredictionLongRunningResponse')) {
                      const generateVideoResponse = responseData.generateVideoResponse;
                      if(generateVideoResponse.allMediaFilteredReasons && generateVideoResponse.allMediaFilteredReasons.length > 0) {
@@ -308,7 +302,6 @@
         }
         
         async function startGeneration(apiKey) {
-            // --- התיקון כאן ---
             const url = `${API_HOST}/v1beta/models/${MODEL_ENDPOINT}`;
 
             const instance = {};
@@ -323,12 +316,10 @@
                     aspectRatio: document.getElementById('aspectRatio').value,
                     personGeneration: document.getElementById('personGeneration').value,
                     numberOfVideos: parseInt(document.getElementById('numberOfVideos').value, 10),
-                    durationSeconds: parseInt(document.getElementById('durationSeconds').value, 10),
-                    enhance_prompt: document.getElementById('enhance_prompt').checked
+                    durationSeconds: parseInt(document.getElementById('durationSeconds').value, 10)
                 }
             };
             
-            // הסרת פרמטרים ריקים
             if (!requestBody.parameters.negativePrompt) {
                 delete requestBody.parameters.negativePrompt;
             }
