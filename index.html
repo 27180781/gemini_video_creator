@@ -199,7 +199,7 @@
     </div>
 
     <script>
-        const videoForm = document.getElementById('videoForm');
+       const videoForm = document.getElementById('videoForm');
         const submitBtn = document.getElementById('submitBtn');
         const statusDiv = document.getElementById('status');
         const resultDiv = document.getElementById('result');
@@ -211,7 +211,8 @@
         let imageBase64 = null;
 
         const API_HOST = 'https://generativelanguage.googleapis.com';
-        const MODEL = 'veo'; // Note: Using 'veo' as the model endpoint might be more general. Adjust if a specific version is required.
+        // הוחזר שם המודל ונקודת הקצה הנכונים
+        const MODEL_ENDPOINT = 'veo-2.0-generate-001:predictLongRunning';
 
         // --- Event Listeners ---
         promptParts.forEach(input => {
@@ -230,7 +231,6 @@
             }
             const reader = new FileReader();
             reader.onload = () => {
-                // The result includes the base64 prefix, which we might need to remove depending on API spec
                 imageBase64 = reader.result.split(',')[1];
                 showStatus('תמונה נטענה בהצלחה.', 'info');
                  setTimeout(() => statusDiv.style.display = 'none', 3000);
@@ -267,19 +267,22 @@
                 if (finalResult.error) {
                     throw new Error(finalResult.error.message);
                 }
-
-                const generatedSamples = finalResult.response?.generateVideoResponse?.generatedSamples;
-                const filteredReason = finalResult.response?.generateVideoResponse?.allMediaFilteredReasons?.[0];
-
-                if(filteredReason){
-                    throw new Error(`הסרטון סונן על ידי ה-API. סיבה: ${filteredReason}`);
-                }
-
-                if (generatedSamples && generatedSamples.length > 0) {
-                    displayVideos(generatedSamples);
-                    showStatus(`הסרטון/ים מוכנים! 🎉`, 'info');
+                
+                const responseData = finalResult.response;
+                // בדיקה משופרת לשגיאות סינון תוכן
+                if (responseData && responseData['@type'] && responseData['@type'].includes('PredictionLongRunningResponse')) {
+                     const generateVideoResponse = responseData.generateVideoResponse;
+                     if(generateVideoResponse.allMediaFilteredReasons && generateVideoResponse.allMediaFilteredReasons.length > 0) {
+                         throw new Error(`הסרטון סונן על ידי ה-API. סיבה: ${generateVideoResponse.allMediaFilteredReasons[0]}`);
+                     }
+                     if (generateVideoResponse.generatedSamples && generateVideoResponse.generatedSamples.length > 0) {
+                        displayVideos(generateVideoResponse.generatedSamples);
+                        showStatus(`הסרטון/ים מוכנים! 🎉`, 'info');
+                     } else {
+                        throw new Error('לא נמצאו סרטונים בתגובה הסופית. ייתכן שההנחיה נחסמה בשקט.');
+                     }
                 } else {
-                    throw new Error('לא נמצאו סרטונים בתגובה הסופית. בדוק את מבנה האובייקט ב-Console.');
+                     throw new Error('מבנה תגובה לא צפוי מה-API.');
                 }
 
             } catch (error) {
@@ -305,7 +308,8 @@
         }
         
         async function startGeneration(apiKey) {
-            const url = `${API_HOST}/v1beta/models/${MODEL}:generateVideo`;
+            // --- התיקון כאן ---
+            const url = `${API_HOST}/v1beta/models/${MODEL_ENDPOINT}`;
 
             const instance = {};
             const promptValue = finalPromptTextarea.value.trim();
@@ -315,7 +319,7 @@
             const requestBody = {
                 instances: [instance],
                 parameters: {
-                    negativePrompt: document.getElementById('negativePrompt').value.trim(),
+                    negativePrompt: document.getElementById('negativePrompt').value.trim() || undefined,
                     aspectRatio: document.getElementById('aspectRatio').value,
                     personGeneration: document.getElementById('personGeneration').value,
                     numberOfVideos: parseInt(document.getElementById('numberOfVideos').value, 10),
@@ -323,6 +327,11 @@
                     enhance_prompt: document.getElementById('enhance_prompt').checked
                 }
             };
+            
+            // הסרת פרמטרים ריקים
+            if (!requestBody.parameters.negativePrompt) {
+                delete requestBody.parameters.negativePrompt;
+            }
 
             const response = await fetch(url, {
                 method: 'POST',
@@ -335,7 +344,8 @@
 
             const data = await response.json();
             if (!response.ok) {
-                throw new Error(data.error?.message || 'שגיאה לא ידועה בשליחת הבקשה הראשונית.');
+                const errorMsg = data.error?.message || `שגיאה ${response.status} מהשרת.`;
+                throw new Error(errorMsg);
             }
             
             return data.name; 
